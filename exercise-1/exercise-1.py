@@ -1,3 +1,4 @@
+from http.client import HTTPResponse
 import socket
 
 IP_ADDRS = '127.0.0.1'
@@ -14,10 +15,12 @@ server_sock.listen(1)
 
 print('Waiting for client...')
 
-connectionSocket, client_addr = server_sock.accept()
+connection_socket, client_addr = server_sock.accept()
 
 print('Client connected from', client_addr)
 
-message = connectionSocket.recv(PACKET_SIZE)
+message = connection_socket.recv(PACKET_SIZE)
 
 print('Request received:', message.decode(), sep='\n\n')
+
+connection_socket.send('HTTP/1.1 200 OK\r\n\r\n'.encode())
