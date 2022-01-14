@@ -21,6 +21,12 @@ def messageParser(message):
     
     return(200, 'OK', version)
 
+def getHtmlContent():
+    html_content = ''
+    with open('responseMessage.html') as response_message_file:
+        html_content = response_message_file.read()
+    return html_content
+
 server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
 
 print('Starting up on {} port {}'.format(*FULL_ADDRS))
@@ -40,6 +46,11 @@ print('Request received:', message.decode(), sep='\n\n')
 
 (status_code, status_msg, version) = messageParser(message.decode())
 
-response_message = '{} {} {}\r\n\r\n<html><head><h1>Exercise 1\n</h1></head><body>{} - {}!</body></html>'.format(version, status_code, status_msg, status_code, status_msg)
+status_line = '{} {} {}\n'.format(version, status_code, status_msg)
+header_line = ''
+blank_line = '\n'
+body = getHtmlContent()
+
+response_message = status_line + header_line + blank_line + body
 
 connection_socket.send(response_message.encode())
