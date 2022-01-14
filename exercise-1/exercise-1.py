@@ -7,8 +7,7 @@ PACKET_SIZE = 1024
 
 def messageParser(message):
     ''''''
-    decoded_msg = message.decode()
-    lines = decoded_msg.split('\n')
+    lines = message.split('\n')
     
     request_line = lines[0]
     [method, url, version] = request_line.split(' ')
@@ -17,6 +16,10 @@ def messageParser(message):
     print('URL:', url)
     print('Version:', version)
     
+    if method != 'GET':
+        return (501, 'Not Implemented', version)
+    
+    return(200, 'OK', version)
 
 server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
 
@@ -32,8 +35,11 @@ connection_socket, client_addr = server_sock.accept()
 print('Client connected from', client_addr)
 
 message = connection_socket.recv(PACKET_SIZE)
-messageParser(message)
 
-#print('Request received:', message.decode(), sep='\n\n')
+print('Request received:', message.decode(), sep='\n\n')
 
-connection_socket.send('HTTP/1.0 200 OK\r\n\r\n<html></html><head></head><body>OK 200</body>'.encode())
+(status_code, status_msg, version) = messageParser(message.decode())
+
+response_message = '{} {} {}\r\n\r\n<html><head><h1>Exercise 1\n</h1></head><body>{} - {}!</body></html>'.format(version, status_code, status_msg, status_code, status_msg)
+
+connection_socket.send(response_message.encode())
