@@ -1,9 +1,12 @@
 import socket
+from time import sleep
 
 IP_ADDRS = '127.0.0.1'
 PORT_NUM = 2121
 FULL_ADDRS = (IP_ADDRS, PORT_NUM)
 PACKET_SIZE = 1024
+
+data_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 def client_connected_handler():
     return '220 Service ready.\r\n'
@@ -16,7 +19,6 @@ def command_parser(message):
     return (ftp_command, arguments)
 
 def opts_command_handler(args):
-    print('OPTS args:', args)
     return '202 Command not implemented.\r\n'
 
 def user_command_handler(args):
@@ -26,6 +28,23 @@ def pass_command_handler(args):
     return '230 Login Successful.\r\n'
     
 def port_command_handler(args):
+    
+    global data_sock
+
+    args_splited = args.split(',')
+    data_ip_parts = args_splited[:4]
+    data_port_parts = [int(part) for part in args_splited[4:]]
+
+    data_ip = '.'.join(data_ip_parts)
+    data_port =  (data_port_parts[0] * 256) + data_port_parts[1]
+
+    print('Data IP:', data_ip)
+    print('Data port:', data_port)
+    
+    data_sock.connect((data_ip, data_port))
+
+    print('Data connection successfully stablished!')
+
     return '200 Connected.\r\n'
     
 def quit_command_handler(args):
@@ -39,7 +58,7 @@ FTP_COMMANDS = {'OPTS': opts_command_handler,
                 'QUIT': quit_command_handler,
                  }
 
-server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 print('Starting up on {} port {}'.format(*FULL_ADDRS))
 
