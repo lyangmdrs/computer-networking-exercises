@@ -65,7 +65,7 @@ while True:
 
     (status_code, status_msg, version, file_content) = messageParser(message.decode())
 
-    status_line = 'HTTP/1.1 {} {}\r\n'.format(version, status_code, status_msg)
+    status_line = '{} {} {}\r\n'.format(version, status_code, status_msg)
     header_line = ''
     blank_line = '\r\n'
 
@@ -75,8 +75,5 @@ while True:
     else:
         response_message = (status_line + header_line + blank_line).encode() + file_content
 
-    
-
     connection_socket.send(response_message)
     connection_socket.close()
-
