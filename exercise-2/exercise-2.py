@@ -10,23 +10,25 @@ def client_connected_handler():
 
 def command_parser(message):
     
-    message_parts = message.split(' ')
-    ftp_command = message_parts[0].strip()
-    return ftp_command
+    message_parts = (message.strip()).split(' ')
+    ftp_command = message_parts[0]
+    arguments = ' '.join(message_parts[1:])
+    return (ftp_command, arguments)
 
-def opts_command_handler():
+def opts_command_handler(args):
+    print('OPTS args:', args)
     return '202 Command not implemented.\r\n'
 
-def user_command_handler():
+def user_command_handler(args):
     return '331 User name okay, need password.\r\n'
 
-def pass_command_handler():
+def pass_command_handler(args):
     return '230 Login Successful.\r\n'
     
-def port_command_handler():
+def port_command_handler(args):
     return '200 Connected.\r\n'
     
-def quit_command_handler():
+def quit_command_handler(args):
     return '200 Goodbye.\r\n'
     
 
@@ -55,10 +57,22 @@ connection_socket.send(client_connected_handler().encode())
 function_handler = None
 
 while function_handler != FTP_COMMANDS['QUIT']:
-    message = connection_socket.recv(PACKET_SIZE)
-    print('Received Message:', message)
-    function_handler = FTP_COMMANDS[command_parser(message.decode())]
-    response = function_handler()
+    
+    message = (connection_socket.recv(PACKET_SIZE)).decode()
+    print('Received Message:', message.strip())
+    (ftp_command, arguments) = command_parser(message)
+    
+    try:
+        function_handler = FTP_COMMANDS[ftp_command]
+    except KeyError:
+        print("I don't know how to answer to this command!")
+        response = '421 Service not available, closing control connection.\r\n'
+        function_handler = FTP_COMMANDS['QUIT']
+    else:
+        response = function_handler(arguments)
+
     connection_socket.send(response.encode())
 
+print('Clossing connection...')
 connection_socket.close()
+print('Connection closed!')
