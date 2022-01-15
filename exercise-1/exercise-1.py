@@ -4,9 +4,7 @@ IP_ADDRS = '127.0.0.1'
 PORT_NUM = 50500
 FULL_ADDRS = (IP_ADDRS, PORT_NUM)
 PACKET_SIZE = 1024
-OBJ_TAG = '<object data="{}"></object>'
-MSG_TAG = '<h3>{} - {}</h3>'
-HTML_PAGE = '<html><head><h1>Exercise 1</h1></head><body><h3>{} - {}</h3><object data="{}"></object></body></html>'
+HTML_PAGE = '<html><head><h1>{} - {}</h1></head><body</body></html>'
 
 def messageParser(message):
     ''''''
@@ -20,27 +18,29 @@ def messageParser(message):
     print('Version:', version)
     
     if method != 'GET':
-        return ('501', 'Not Implemented', version, '')
+        return ('501', 'Not Implemented', version, None)
     
     if url == '/':
         print('Root path request!')
-        return('200', 'OK', version, '')
+        return('200', 'OK', version, None)
 
     file_name = url.replace('/', '')
     print('Requesting the file:', file_name)
+    file_contet =  None
 
     try:
-        with open(file_name) as f:
+        with open(file_name, 'rb') as f:
+            file_contet = f.read()
             f.close()
             pass
 
     except IOError:
         print('The file "{}" was not found!'.format(file_name))
-        return('404', 'Not Found', version, '')
+        return('404', 'Not Found', version, None)
 
     else:
         print('The file "{}" is present!'.format(file_name))
-        return('200', 'OK', version, file_name)
+        return('200', 'OK', version, file_contet)
 
 
 server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
@@ -50,22 +50,29 @@ print('Starting up on {} port {}'.format(*FULL_ADDRS))
 server_sock.bind(FULL_ADDRS)
 server_sock.listen(1)
 
-print('Waiting for client...')
+while True:
+    print('Waiting for client...')
 
-connection_socket, client_addr = server_sock.accept()
+    connection_socket, client_addr = server_sock.accept()
 
-print('Client connected from', client_addr)
+    print('Client connected from', client_addr)
 
-message = connection_socket.recv(PACKET_SIZE)
+    message = connection_socket.recv(PACKET_SIZE)
 
-(status_code, status_msg, version, file_name) = messageParser(message.decode())
+    (status_code, status_msg, version, file_content) = messageParser(message.decode())
 
-status_line = '{} {} {}\n'.format(version, status_code, status_msg)
-header_line = ''
-blank_line = '\n'
+    status_line = '{} {} {}\r\n'.format(version, status_code, status_msg)
+    header_line = ''
+    blank_line = '\r\n'
 
-body = HTML_PAGE.format(status_code, status_msg, file_name)
+    if not file_content:
+        body = HTML_PAGE.format(status_code, status_msg)
+        response_message = (status_line + header_line + blank_line + body).encode()
+    else:
+        response_message = (status_line + header_line + blank_line).encode() + file_content
 
-response_message = status_line + header_line + blank_line + body
+    
 
-connection_socket.send(response_message.encode())
+    connection_socket.send(response_message)
+    connection_socket.close()
+
