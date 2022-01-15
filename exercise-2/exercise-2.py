@@ -61,19 +61,4 @@ while function_handler != FTP_COMMANDS['QUIT']:
     response = function_handler()
     connection_socket.send(response.encode())
 
-'''
-message = connection_socket.recv(PACKET_SIZE)
-print('Received Message:', message)
-
-connection_socket.send('331 User name okay, need password.\r\n'.encode())
-
-message = connection_socket.recv(PACKET_SIZE)
-print('Received Message:', message)
-
-connection_socket.send('230 Login Successful.\r\n'.encode())
-
-message = connection_socket.recv(PACKET_SIZE)
-print('Received Message:', message)
-'''
-
 connection_socket.close()
