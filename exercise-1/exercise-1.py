@@ -1,7 +1,7 @@
 import socket
 
 IP_ADDRS = '127.0.0.1'
-PORT_NUM = 50500
+PORT_NUM = 8080
 FULL_ADDRS = (IP_ADDRS, PORT_NUM)
 PACKET_SIZE = 1024
 HTML_PAGE = '<html><head><h1>{} - {}</h1></head><body</body></html>'
@@ -10,6 +10,9 @@ def messageParser(message):
     ''''''
     lines = message.splitlines()
     
+    if not lines:
+        return('400', 'Bad Request', 'HTTP/1.1')
+
     request_line = lines[0]
     [method, url, version] = request_line.split(' ')
 
@@ -26,6 +29,7 @@ def messageParser(message):
 
     file_name = url.replace('/', '')
     print('Requesting the file:', file_name)
+    
     file_contet =  None
 
     try:
@@ -61,7 +65,7 @@ while True:
 
     (status_code, status_msg, version, file_content) = messageParser(message.decode())
 
-    status_line = '{} {} {}\r\n'.format(version, status_code, status_msg)
+    status_line = 'HTTP/1.1 {} {}\r\n'.format(version, status_code, status_msg)
     header_line = ''
     blank_line = '\r\n'
 
