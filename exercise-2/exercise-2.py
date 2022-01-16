@@ -131,12 +131,6 @@ while True:
         else:
             response = function_handler(arguments)
         
-        # The following "if" statement is for cases where the function responds
-        # with ERROR_NOT_AVAILABLE_MSG, without an exception being raised.
-
-        if response == ERROR_NOT_AVAILABLE_MSG:  
-            function_handler = FTP_COMMANDS['QUIT']
-
         cmd_sock.send(response.encode())
 
     print('Closing connection...')
