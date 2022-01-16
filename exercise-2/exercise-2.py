@@ -7,7 +7,9 @@ FULL_ADDRS = (IP_ADDRS, PORT_NUM)
 PACKET_SIZE = 1024
 ERROR_NOT_AVAILABLE_MSG = '421 Service not available, closing control connection.\r\n'
 
-data_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# Just initializing the socket object
+data_sock = socket.socket()
+cmd_sock = socket.socket()
 
 def client_connected_handler():
     return '220 Service ready.\r\n'
@@ -42,6 +44,7 @@ def port_command_handler(args):
     print('Data IP:', data_ip)
     print('Data port:', data_port)
     
+    data_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     data_sock.connect((data_ip, data_port))
 
     print('Data connection successfully stablished!')
@@ -52,7 +55,22 @@ def quit_command_handler(args):
     return '200 Goodbye.\r\n'
 
 def retr_command_handler(args):
-    return ERROR_NOT_AVAILABLE_MSG
+
+    file_data = b''
+    try:
+        with open(args, 'rb') as retr_file:
+            file_data = retr_file.read()
+    except FileNotFoundError:
+        data_sock.close()
+        return '426 Transfer aborted: Requested file is not present.\r\n'
+
+    print('File content:', file_data)
+
+    cmd_sock.send('150 Starting data transfer\r\n'.encode())
+    data_sock.send(file_data)
+    data_sock.close()
+
+    return '226 Operation successful\r\n'
 
 def stor_command_handler(args):
     return ERROR_NOT_AVAILABLE_MSG
@@ -75,17 +93,17 @@ server_sock.listen(1)
 
 print('Waiting for client...')
 
-connection_socket, client_addr = server_sock.accept()
+cmd_sock, client_addr = server_sock.accept()
 
 print('Client connected from', client_addr)
 
-connection_socket.send(client_connected_handler().encode())
+cmd_sock.send(client_connected_handler().encode())
 
 function_handler = None
 
 while function_handler != FTP_COMMANDS['QUIT']:
     
-    message = (connection_socket.recv(PACKET_SIZE)).decode()
+    message = (cmd_sock.recv(PACKET_SIZE)).decode()
     print('Received Message:', message.strip())
     (ftp_command, arguments) = command_parser(message)
     
@@ -104,8 +122,8 @@ while function_handler != FTP_COMMANDS['QUIT']:
     if response == ERROR_NOT_AVAILABLE_MSG:  
         function_handler = FTP_COMMANDS['QUIT']
 
-    connection_socket.send(response.encode())
+    cmd_sock.send(response.encode())
 
-print('Clossing connection...')
-connection_socket.close()
+print('Closing connection...')
+cmd_sock.close()
 print('Connection closed!')
