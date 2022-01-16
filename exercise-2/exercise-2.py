@@ -1,5 +1,4 @@
 import socket
-from time import sleep
 
 IP_ADDRS = '127.0.0.1'
 PORT_NUM = 2121
@@ -63,8 +62,8 @@ def retr_command_handler(args):
     except FileNotFoundError:
         data_sock.close()
         return '426 Transfer aborted: Requested file is not present.\r\n'
-
-    print('File content:', file_data)
+    else:
+        retr_file.close()
 
     cmd_sock.send('150 Starting data transfer\r\n'.encode())
     data_sock.send(file_data)
@@ -73,7 +72,22 @@ def retr_command_handler(args):
     return '226 Operation successful\r\n'
 
 def stor_command_handler(args):
-    return ERROR_NOT_AVAILABLE_MSG
+    
+    cmd_sock.send('150 Starting data transfer\r\n'.encode())
+    file_data = b''
+    received_data = data_sock.recv(PACKET_SIZE)
+
+    while (received_data):
+        file_data += received_data
+        received_data = data_sock.recv(PACKET_SIZE)
+
+    data_sock.close()
+
+    with open(args, 'wb') as stor_file:
+        stor_file.write(file_data)
+        stor_file.close()
+
+    return '226 Operation successful\r\n'
 
 FTP_COMMANDS = {'OPTS': opts_command_handler, 
                 'USER': user_command_handler,
