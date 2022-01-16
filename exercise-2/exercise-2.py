@@ -4,7 +4,6 @@ IP_ADDRS = '127.0.0.1'
 PORT_NUM = 2121
 FULL_ADDRS = (IP_ADDRS, PORT_NUM)
 PACKET_SIZE = 1024
-ERROR_NOT_AVAILABLE_MSG = '421 Service not available, closing control connection.\r\n'
 
 # Just initializing the socket object
 data_sock = socket.socket()
@@ -126,8 +125,7 @@ while True:
             function_handler = FTP_COMMANDS[ftp_command]
         except KeyError:
             print("I don't know how to answer to this command!")
-            response = ERROR_NOT_AVAILABLE_MSG
-            function_handler = FTP_COMMANDS['QUIT']
+            response = '502 Command not implemented.\r\n'
         else:
             response = function_handler(arguments)
         
