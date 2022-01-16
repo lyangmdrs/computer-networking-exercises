@@ -105,39 +105,40 @@ print('Starting up on {} port {}'.format(*FULL_ADDRS))
 server_sock.bind(FULL_ADDRS)
 server_sock.listen(1)
 
-print('Waiting for client...')
+while True:
+    print('Waiting for client...')
 
-cmd_sock, client_addr = server_sock.accept()
+    cmd_sock, client_addr = server_sock.accept()
 
-print('Client connected from', client_addr)
+    print('Client connected from', client_addr)
 
-cmd_sock.send(client_connected_handler().encode())
+    cmd_sock.send(client_connected_handler().encode())
 
-function_handler = None
+    function_handler = None
 
-while function_handler != FTP_COMMANDS['QUIT']:
-    
-    message = (cmd_sock.recv(PACKET_SIZE)).decode()
-    print('Received Message:', message.strip())
-    (ftp_command, arguments) = command_parser(message)
-    
-    try:
-        function_handler = FTP_COMMANDS[ftp_command]
-    except KeyError:
-        print("I don't know how to answer to this command!")
-        response = ERROR_NOT_AVAILABLE_MSG
-        function_handler = FTP_COMMANDS['QUIT']
-    else:
-        response = function_handler(arguments)
-    
-    # The following "if" statement is for cases where the function responds
-    # with ERROR_NOT_AVAILABLE_MSG, without an exception being raised.
+    while function_handler != FTP_COMMANDS['QUIT']:
+        
+        message = (cmd_sock.recv(PACKET_SIZE)).decode()
+        print('Received Message:', message.strip())
+        (ftp_command, arguments) = command_parser(message)
+        
+        try:
+            function_handler = FTP_COMMANDS[ftp_command]
+        except KeyError:
+            print("I don't know how to answer to this command!")
+            response = ERROR_NOT_AVAILABLE_MSG
+            function_handler = FTP_COMMANDS['QUIT']
+        else:
+            response = function_handler(arguments)
+        
+        # The following "if" statement is for cases where the function responds
+        # with ERROR_NOT_AVAILABLE_MSG, without an exception being raised.
 
-    if response == ERROR_NOT_AVAILABLE_MSG:  
-        function_handler = FTP_COMMANDS['QUIT']
+        if response == ERROR_NOT_AVAILABLE_MSG:  
+            function_handler = FTP_COMMANDS['QUIT']
 
-    cmd_sock.send(response.encode())
+        cmd_sock.send(response.encode())
 
-print('Closing connection...')
-cmd_sock.close()
-print('Connection closed!')
+    print('Closing connection...')
+    cmd_sock.close()
+    print('Connection closed!')
