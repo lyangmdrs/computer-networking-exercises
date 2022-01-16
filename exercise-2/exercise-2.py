@@ -5,6 +5,7 @@ IP_ADDRS = '127.0.0.1'
 PORT_NUM = 2121
 FULL_ADDRS = (IP_ADDRS, PORT_NUM)
 PACKET_SIZE = 1024
+ERROR_NOT_AVAILABLE_MSG = '421 Service not available, closing control connection.\r\n'
 
 data_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -49,14 +50,21 @@ def port_command_handler(args):
     
 def quit_command_handler(args):
     return '200 Goodbye.\r\n'
-    
+
+def retr_command_handler(args):
+    return ERROR_NOT_AVAILABLE_MSG
+
+def stor_command_handler(args):
+    return ERROR_NOT_AVAILABLE_MSG
 
 FTP_COMMANDS = {'OPTS': opts_command_handler, 
                 'USER': user_command_handler,
                 'PASS': pass_command_handler,
                 'PORT': port_command_handler,
                 'QUIT': quit_command_handler,
-                 }
+                'RETR': retr_command_handler,
+                'STOR': stor_command_handler,
+                }
 
 server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -85,10 +93,16 @@ while function_handler != FTP_COMMANDS['QUIT']:
         function_handler = FTP_COMMANDS[ftp_command]
     except KeyError:
         print("I don't know how to answer to this command!")
-        response = '421 Service not available, closing control connection.\r\n'
+        response = ERROR_NOT_AVAILABLE_MSG
         function_handler = FTP_COMMANDS['QUIT']
     else:
         response = function_handler(arguments)
+    
+    # The following "if" statement is for cases where the function responds
+    # with ERROR_NOT_AVAILABLE_MSG, without an exception being raised.
+
+    if response == ERROR_NOT_AVAILABLE_MSG:  
+        function_handler = FTP_COMMANDS['QUIT']
 
     connection_socket.send(response.encode())
 
